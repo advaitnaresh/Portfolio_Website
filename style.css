@@ -904,21 +904,32 @@ body {
 .profile-image-container {
   position: relative;
   margin: 0 auto 2rem;
-  width: 200px;
-  height: 200px;
+  width: 180px;
+  height: 180px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .profile-image {
-  width: 200px;
-  height: 200px;
+  width: 100%;
+  height: 100%;
   border-radius: 50%;
-  background: var(--color-gradient-1);
+  overflow: hidden;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   display: flex;
   align-items: center;
   justify-content: center;
   position: relative;
-  z-index: 2;
-  animation: profilePulse 3s infinite;
+}
+
+.profile-photo {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+  border-radius: 50%;
+  display: block;
 }
 
 .profile-initials {
@@ -1760,8 +1771,8 @@ section {
 
   .profile-image-container,
   .profile-image {
-    width: 150px;
-    height: 150px;
+    width: 120px;
+    height: 120px;
   }
 
   .profile-initials {
