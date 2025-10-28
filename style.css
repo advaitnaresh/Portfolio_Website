@@ -905,6 +905,7 @@ body {
   max-width: 800px;
 }
 
+/* Base styles for mobile */
 .profile-image-container {
   position: relative;
   margin: 0 auto 2rem;
@@ -933,6 +934,19 @@ body {
   transition: transform var(--animation-duration) var(--transition-timing);
 }
 
+/* Adjust size for laptop and desktop screens */
+@media (min-width: 768px) {
+  .profile-image-container {
+    width: 160px;
+    height: 160px;
+  }
+  
+  .profile-image {
+    width: 160px;
+    height: 160px;
+  }
+}
+
 .profile-image:hover {
   transform: scale(1.05);
 }
@@ -953,7 +967,6 @@ body {
 .profile-image-container:hover .profile-ring {
   transform: scale(1.1);
   opacity: 1;
-}
   animation: profilePulse 3s infinite;
 }
 
