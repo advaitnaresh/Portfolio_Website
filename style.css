@@ -936,31 +936,22 @@ body {
 
 .profile-ring {
   position: absolute;
-  top: -8px;
-  left: -8px;
-  right: -8px;
-  bottom: -8px;
-  border: 2px solid var(--color-teal-400);
+  /* use inset to keep ring proportional to the image container */
+  inset: -8px; /* top right bottom left */
+  border: 3px solid var(--color-teal-400);
   border-radius: 50%;
   z-index: 1;
-  opacity: 0.7;
-  transition: all var(--animation-duration) var(--transition-timing);
-  animation: ringPulse 2s infinite ease-in-out;
+  opacity: 0.85;
+  pointer-events: none;
+  transition: transform var(--animation-duration) var(--transition-timing), opacity var(--animation-duration);
+  animation: ringPulse 3.5s ease-in-out infinite;
+  transform-origin: center center;
 }
 
 @keyframes ringPulse {
-  0% {
-    transform: scale(1);
-    opacity: 0.7;
-  }
-  50% {
-    transform: scale(1.05);
-    opacity: 0.9;
-  }
-  100% {
-    transform: scale(1);
-    opacity: 0.7;
-  }
+  0% { transform: scale(1); opacity: 0.75; }
+  50% { transform: scale(1.04); opacity: 0.95; }
+  100% { transform: scale(1); opacity: 0.75; }
 }
 
 .profile-image-container:hover .profile-image {
@@ -968,76 +959,41 @@ body {
 }
 
 .profile-image-container:hover .profile-ring {
-  transform: scale(1.1);
+  transform: scale(1.08);
   opacity: 1;
   border-color: var(--color-teal-300);
   animation: none;
 }
 
-/* Adjust size for laptop and desktop screens */
+/* Responsive adjustments */
 @media (min-width: 768px) {
-  .profile-image-container {
-    width: 160px;
-    height: 160px;
-  }
-  
-  .profile-image {
-    width: 160px;
-    height: 160px;
-  }
-  
-  .profile-ring {
-    top: -6px;
-    left: -6px;
-    right: -6px;
-    bottom: -6px;
-  }
+  /* Slightly smaller image on tablets / small laptops and add top spacing so it doesn't sit too high */
+  .profile-image-container { width: 160px; height: 160px; margin: 1.5rem auto 2rem; }
+  .profile-image { width: 160px; height: 160px; }
+  .profile-ring { inset: -6px; border-width: 2px; }
 }
 
-.profile-ring {
-  position: absolute;
-  top: -10px;
-  left: -10px;
-  right: -10px;
-  bottom: -10px;
-  border: 3px solid var(--color-accent);
-  border-radius: 50%;
-  z-index: 1;
-  opacity: 0.7;
-  transition: all var(--animation-duration) var(--transition-timing);
+@media (min-width: 1024px) {
+  /* Desktop: reduce visual footprint so it feels balanced with larger headings */
+  .profile-image-container { width: 140px; height: 140px; margin: 2.5rem auto 2.5rem; }
+  .profile-image { width: 140px; height: 140px; }
+  .profile-ring { inset: -5px; border-width: 2px; }
 }
 
-.profile-image-container:hover .profile-ring {
-  transform: scale(1.1);
-  opacity: 1;
-  animation: profilePulse 3s infinite;
+@media (min-width: 1200px) {
+  /* Big screens: stop ring animation for a cleaner header and slightly tighten ring */
+  .profile-ring { animation: none; border-width: 2px; opacity: 0.9; }
+}
+
+@media (max-width: 600px) {
+  .profile-image-container, .profile-image { width: 150px; height: 150px; }
+  .profile-ring { inset: -6px; }
 }
 
 .profile-initials {
   font-size: 4rem;
   font-weight: bold;
   color: white;
-}
-
-.profile-ring {
-  position: absolute;
-  top: -10px;
-  left: -10px;
-  width: 220px;
-  height: 220px;
-  border-radius: 50%;
-  border: 3px solid var(--color-primary);
-  animation: ringRotate 10s linear infinite;
-}
-
-@keyframes profilePulse {
-  0%, 100% { box-shadow: 0 0 30px rgba(0, 212, 255, 0.5); }
-  50% { box-shadow: 0 0 50px rgba(0, 212, 255, 0.8); }
-}
-
-@keyframes ringRotate {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
 }
 
 .hero-title {
