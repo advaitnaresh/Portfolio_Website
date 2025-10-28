@@ -927,7 +927,7 @@ body {
   width: 100%;
   height: 100%;
   object-fit: cover;
-  object-position: center;
+  object-position: center top;  /* can try just 'top' or fine-tune with 'center 20%' */
   border-radius: 50%;
   display: block;
 }
