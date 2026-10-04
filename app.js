@@ -1,219 +1,79 @@
-// Navigation scroll effect
-window.addEventListener('scroll', () => {
-  const navbar = document.getElementById('navbar');
-  if (window.scrollY > 50) {
-    navbar.classList.add('scrolled');
-  } else {
-    navbar.classList.remove('scrolled');
+(() => {
+  'use strict';
+  document.getElementById('year').textContent = new Date().getFullYear();
+  const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
+  const coarsePointer = matchMedia('(pointer: coarse)');
+  const stage = document.getElementById('robot-stage');
+  const robot = document.getElementById('robot');
+  const pupils = document.querySelector('.robot-pupil');
+  const head = document.getElementById('robot-head');
+  const targetMarker = document.getElementById('tracking-target');
+  const path = document.getElementById('tracking-path');
+  const toggle = document.getElementById('motion-toggle');
+  const instruction = document.getElementById('robot-instruction');
+  let paused = reducedMotion.matches, frame = 0, lastTime = 0, visible = true;
+  let x = 0, y = 0, targetX = 0, targetY = 0, gazeX = 0, gazeY = 0, eyeX = 0, eyeY = 0;
+  const clamp = (n, min, max) => Math.max(min, Math.min(max, n));
+  function render() {
+    robot.style.transform = `translate(calc(-50% + ${x}px), calc(-50% + ${y}px))`;
+    pupils.style.transform = `translate(${eyeX}px, ${eyeY}px)`;
+    head.style.transform = `rotate(${eyeX * .4}deg)`;
+    const rect = stage.getBoundingClientRect();
+    if (!rect.width || !rect.height) return;
+    const sx = 250 + x / rect.width * 500, sy = 195 + y / rect.height * 390;
+    const tx = 250 + targetX / rect.width * 500, ty = 195 + targetY / rect.height * 390;
+    targetMarker.setAttribute('cx', tx.toFixed(2)); targetMarker.setAttribute('cy', ty.toFixed(2));
+    path.setAttribute('d', `M${sx.toFixed(2)} ${sy.toFixed(2)} Q${((sx + tx) / 2).toFixed(2)} ${(sy - 20).toFixed(2)} ${tx.toFixed(2)} ${ty.toFixed(2)}`);
+    targetMarker.style.opacity = Math.hypot(x-targetX,y-targetY) > 3 ? '.65' : '0';
   }
-});
-
-// Mobile navigation toggle
-const navToggle = document.getElementById('navToggle');
-const navMenu = document.getElementById('navMenu');
-
-navToggle.addEventListener('click', () => {
-  navMenu.classList.toggle('active');
-});
-
-// Close mobile menu when clicking on a link
-const navLinks = document.querySelectorAll('.nav-link');
-navLinks.forEach(link => {
-  link.addEventListener('click', () => {
-    navMenu.classList.remove('active');
-  });
-});
-
-// Create floating particles in hero section
-function createParticles() {
-  const particlesContainer = document.getElementById('particles');
-  const particleCount = 30;
-
-  for (let i = 0; i < particleCount; i++) {
-    const particle = document.createElement('div');
-    particle.classList.add('particle');
-    
-    const size = Math.random() * 5 + 2;
-    particle.style.width = `${size}px`;
-    particle.style.height = `${size}px`;
-    particle.style.left = `${Math.random() * 100}%`;
-    particle.style.top = `${Math.random() * 100}%`;
-    particle.style.animationDuration = `${Math.random() * 10 + 10}s`;
-    particle.style.animationDelay = `${Math.random() * 5}s`;
-    
-    particlesContainer.appendChild(particle);
+  function animate(now) {
+    frame = 0;
+    if(paused || !visible || document.hidden) return;
+    const dt = lastTime ? Math.min((now-lastTime)/1000, .05) : 1/60;lastTime=now;
+    const bodyEase=1-Math.exp(-5*dt), eyeEase=1-Math.exp(-12*dt);
+    x+=(targetX-x)*bodyEase;y+=(targetY-y)*bodyEase;
+    eyeX+=(gazeX-eyeX)*eyeEase;eyeY+=(gazeY-eyeY)*eyeEase;
+    render();
+    if(Math.abs(targetX-x)+Math.abs(targetY-y)+Math.abs(gazeX-eyeX)+Math.abs(gazeY-eyeY)>.06) frame=requestAnimationFrame(animate);
   }
-}
-
-createParticles();
-
-// Intersection Observer for scroll animations
-const observerOptions = {
-  threshold: 0.1,
-  rootMargin: '0px 0px -50px 0px'
-};
-
-const observer = new IntersectionObserver((entries) => {
-  entries.forEach(entry => {
-    if (entry.isIntersecting) {
-      entry.target.classList.add('animate');
-      
-      // Animate skill bars
-      if (entry.target.querySelector('.skill-progress')) {
-        animateSkillBars(entry.target);
-      }
-      
-      // Animate counters
-      if (entry.target.querySelector('.stat-number')) {
-        animateCounters(entry.target);
-      }
+  function start(){if(!paused && visible && !frame && !document.hidden){lastTime=0;frame=requestAnimationFrame(animate)}}
+  function center(){targetX=targetY=gazeX=gazeY=0;start()}
+  function guide(clientX,clientY){
+    if(paused)return;
+    const rect=stage.getBoundingClientRect();
+    const localX=clientX-rect.left-rect.width/2, localY=clientY-rect.top-rect.height/2;
+    gazeX=clamp((localX-x)/20,-10,10);gazeY=clamp((localY-y)/25,-7,7);
+    // Keep the robot inside its own stage. Eyes can follow the pointer across the page.
+    if(clientX>=rect.left && clientX<=rect.right && clientY>=rect.top && clientY<=rect.bottom){
+      const maxX=Math.max(0,(rect.width-robot.offsetWidth)/2-16);
+      const maxY=Math.max(0,(rect.height-robot.offsetHeight)/2-12);
+      targetX=clamp(localX,maxX*-1,maxX);targetY=clamp(localY,maxY*-1,maxY);
     }
-  });
-}, observerOptions);
-
-// Observe all elements with data-animate attribute
-const animateElements = document.querySelectorAll('[data-animate]');
-animateElements.forEach(el => observer.observe(el));
-
-// Animate skill bars
-function animateSkillBars(container) {
-  const skillBars = container.querySelectorAll('.skill-progress');
-  skillBars.forEach(bar => {
-    const progress = bar.getAttribute('data-progress');
-    setTimeout(() => {
-      bar.style.width = `${progress}%`;
-    }, 200);
-  });
-}
-
-// Animate counters
-function animateCounters(container) {
-  const counters = container.querySelectorAll('.stat-number');
-  counters.forEach(counter => {
-    const target = parseInt(counter.getAttribute('data-count'));
-    const duration = 2000;
-    const increment = target / (duration / 16);
-    let current = 0;
-
-    const updateCounter = () => {
-      current += increment;
-      if (current < target) {
-        counter.textContent = Math.floor(current).toLocaleString();
-        requestAnimationFrame(updateCounter);
-      } else {
-        counter.textContent = target.toLocaleString();
-      }
-    };
-
-    updateCounter();
-  });
-}
-
-// Smooth scroll for anchor links
-document.querySelectorAll('a[href^="#"]').forEach(anchor => {
-  anchor.addEventListener('click', function (e) {
-    const href = this.getAttribute('href');
-    if (href !== '#') {
-      e.preventDefault();
-      const target = document.querySelector(href);
-      if (target) {
-        const offsetTop = target.offsetTop - 80;
-        window.scrollTo({
-          top: offsetTop,
-          behavior: 'smooth'
-        });
-      }
-    }
-  });
-});
-
-// Add active state to navigation based on scroll position
-window.addEventListener('scroll', () => {
-  const sections = document.querySelectorAll('section');
-  const navLinks = document.querySelectorAll('.nav-link');
-  
-  let current = '';
-  
-  sections.forEach(section => {
-    const sectionTop = section.offsetTop;
-    const sectionHeight = section.clientHeight;
-    if (window.scrollY >= sectionTop - 100) {
-      current = section.getAttribute('id');
-    }
-  });
-  
-  navLinks.forEach(link => {
-    link.classList.remove('active');
-    if (link.getAttribute('href') === `#${current}`) {
-      link.classList.add('active');
-    }
-  });
-});
-
-// Add hover effect to project cards
-const projectCards = document.querySelectorAll('.project-card');
-projectCards.forEach(card => {
-  card.addEventListener('mouseenter', function() {
-    this.style.transform = 'translateY(-15px) scale(1.02)';
-  });
-  
-  card.addEventListener('mouseleave', function() {
-    this.style.transform = 'translateY(0) scale(1)';
-  });
-});
-
-// Add parallax effect to hero section
-window.addEventListener('scroll', () => {
-  const scrolled = window.scrollY;
-  const heroContent = document.querySelector('.hero-content');
-  if (heroContent && scrolled < window.innerHeight) {
-    heroContent.style.transform = `translateY(${scrolled * 0.5}px)`;
-    heroContent.style.opacity = 1 - (scrolled / 800);
+    start();
   }
-});
-
-// Typing effect for hero tagline (optional enhancement)
-const tagline = document.querySelector('.hero-tagline');
-if (tagline) {
-  const text = tagline.textContent;
-  tagline.textContent = '';
-  let i = 0;
-  
-  setTimeout(() => {
-    const typeWriter = () => {
-      if (i < text.length) {
-        tagline.textContent += text.charAt(i);
-        i++;
-        setTimeout(typeWriter, 50);
-      }
-    };
-    typeWriter();
-  }, 1500);
-}
-
-// Add click effect to buttons
-const buttons = document.querySelectorAll('.btn');
-buttons.forEach(button => {
-  button.addEventListener('click', function(e) {
-    const ripple = document.createElement('span');
-    const rect = this.getBoundingClientRect();
-    const size = Math.max(rect.width, rect.height);
-    const x = e.clientX - rect.left - size / 2;
-    const y = e.clientY - rect.top - size / 2;
-    
-    ripple.style.width = ripple.style.height = size + 'px';
-    ripple.style.left = x + 'px';
-    ripple.style.top = y + 'px';
-    ripple.classList.add('ripple');
-    
-    this.appendChild(ripple);
-    
-    setTimeout(() => {
-      ripple.remove();
-    }, 600);
+  document.addEventListener('pointermove',e=>{if(e.pointerType!=='touch')guide(e.clientX,e.clientY)},{passive:true});
+  stage.addEventListener('pointerdown',e=>guide(e.clientX,e.clientY),{passive:true});
+  stage.addEventListener('keydown',e=>{
+    const directions={ArrowLeft:[-30,0],ArrowRight:[30,0],ArrowUp:[0,-25],ArrowDown:[0,25]};
+    if(paused || !directions[e.key])return;
+    e.preventDefault();const [dx,dy]=directions[e.key],rect=stage.getBoundingClientRect();
+    guide(rect.left+rect.width/2+targetX+dx,rect.top+rect.height/2+targetY+dy);
   });
-});
-
-// Console welcome message
-console.log('%c Welcome to Advait Jishnani\'s Portfolio! ', 'background: linear-gradient(135deg, #00d4ff 0%, #00ffc6 100%); color: #000; font-size: 20px; padding: 10px; border-radius: 5px;');
-console.log('%c Interested in the code? Check out my GitHub! ', 'color: #00d4ff; font-size: 14px;');
+  document.documentElement.addEventListener('pointerleave',center);
+  function updateControls(){
+    toggle.textContent=paused?'Enable tracking':'Pause tracking';toggle.setAttribute('aria-pressed',String(!paused));
+    stage.parentElement.classList.toggle('paused',paused);
+    instruction.textContent=paused?'Tracking paused.':coarsePointer.matches?'Tap around the robot to guide it.':'Move your pointer. I’m following.';
+  }
+  toggle.addEventListener('click',()=>{paused=!paused;updateControls();if(paused){cancelAnimationFrame(frame);frame=0}else start()});
+  reducedMotion.addEventListener('change',()=>{paused=reducedMotion.matches;cancelAnimationFrame(frame);frame=0;if(paused){x=y=eyeX=eyeY=targetX=targetY=gazeX=gazeY=0;render()}updateControls();start()});
+  coarsePointer.addEventListener('change',updateControls);
+  new ResizeObserver(()=>{x=y=targetX=targetY=0;render()}).observe(stage);
+  new IntersectionObserver(entries=>{visible=entries[0].isIntersecting;if(!visible){cancelAnimationFrame(frame);frame=0}else start()}).observe(stage);
+  document.addEventListener('visibilitychange',()=>{if(document.hidden){cancelAnimationFrame(frame);frame=0}else start()});
+  document.getElementById('copy-email').addEventListener('click',async()=>{
+    const status=document.getElementById('copy-status');
+    try{await navigator.clipboard.writeText('aj4700@nyu.edu');status.textContent='Copied to clipboard.'}catch{status.textContent='Email: aj4700@nyu.edu'}
+  });
+  updateControls();render();
+})();
