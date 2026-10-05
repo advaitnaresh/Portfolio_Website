@@ -1,24 +1,11 @@
 # Advait Jishnani | Personal Portfolio
 
-Personal website featuring software, data engineering, AI, and robotics projects.
+Buildless personal portfolio with a readable dark theme and a dedicated Projects page.
 
-## Run locally
+Serve the repository root with `python3 -m http.server 4173`.
 
-```sh
-python3 -m http.server 4173
-```
+The Projects page contains 15 selected projects with category filters and text search. Descriptions come from the existing resume, public LinkedIn information, public repositories, and prior portfolio. Briefly documented projects retain conservative descriptions. Projects without a verified repository have contact links.
 
-Open http://localhost:4173. No build step or dependencies are required.
+A decorative SVG cat follows the cursor, pounces, and wanders or rests when idle. The Cat companion controls allow disabling following or hiding the cat. Settings persist across pages. Reduced-motion preferences stop movement. The cat does not intercept clicks or request camera access.
 
-## Features
-
-- Responsive black and electric blue design
-- Interactive robot with pointer-following eyes, touch and keyboard controls
-- Reduced-motion support and a tracking pause control
-- Updated experience, project links, resume, and contact details
-
-The robot interaction is inspired by the MPC and ROS project. It is a browser animation, not a running ROS controller.
-
-## GitHub Pages
-
-Serve the repository root from the main branch. The root index.html and relative asset paths work with GitHub Pages.
+Assets and application source are in the repository root. GitHub Pages can serve these files from a repository root without a build step.

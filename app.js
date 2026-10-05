@@ -1,79 +1,35 @@
 (() => {
-  'use strict';
-  document.getElementById('year').textContent = new Date().getFullYear();
-  const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
-  const coarsePointer = matchMedia('(pointer: coarse)');
-  const stage = document.getElementById('robot-stage');
-  const robot = document.getElementById('robot');
-  const pupils = document.querySelector('.robot-pupil');
-  const head = document.getElementById('robot-head');
-  const targetMarker = document.getElementById('tracking-target');
-  const path = document.getElementById('tracking-path');
-  const toggle = document.getElementById('motion-toggle');
-  const instruction = document.getElementById('robot-instruction');
-  let paused = reducedMotion.matches, frame = 0, lastTime = 0, visible = true;
-  let x = 0, y = 0, targetX = 0, targetY = 0, gazeX = 0, gazeY = 0, eyeX = 0, eyeY = 0;
-  const clamp = (n, min, max) => Math.max(min, Math.min(max, n));
-  function render() {
-    robot.style.transform = `translate(calc(-50% + ${x}px), calc(-50% + ${y}px))`;
-    pupils.style.transform = `translate(${eyeX}px, ${eyeY}px)`;
-    head.style.transform = `rotate(${eyeX * .4}deg)`;
-    const rect = stage.getBoundingClientRect();
-    if (!rect.width || !rect.height) return;
-    const sx = 250 + x / rect.width * 500, sy = 195 + y / rect.height * 390;
-    const tx = 250 + targetX / rect.width * 500, ty = 195 + targetY / rect.height * 390;
-    targetMarker.setAttribute('cx', tx.toFixed(2)); targetMarker.setAttribute('cy', ty.toFixed(2));
-    path.setAttribute('d', `M${sx.toFixed(2)} ${sy.toFixed(2)} Q${((sx + tx) / 2).toFixed(2)} ${(sy - 20).toFixed(2)} ${tx.toFixed(2)} ${ty.toFixed(2)}`);
-    targetMarker.style.opacity = Math.hypot(x-targetX,y-targetY) > 3 ? '.65' : '0';
-  }
-  function animate(now) {
-    frame = 0;
-    if(paused || !visible || document.hidden) return;
-    const dt = lastTime ? Math.min((now-lastTime)/1000, .05) : 1/60;lastTime=now;
-    const bodyEase=1-Math.exp(-5*dt), eyeEase=1-Math.exp(-12*dt);
-    x+=(targetX-x)*bodyEase;y+=(targetY-y)*bodyEase;
-    eyeX+=(gazeX-eyeX)*eyeEase;eyeY+=(gazeY-eyeY)*eyeEase;
-    render();
-    if(Math.abs(targetX-x)+Math.abs(targetY-y)+Math.abs(gazeX-eyeX)+Math.abs(gazeY-eyeY)>.06) frame=requestAnimationFrame(animate);
-  }
-  function start(){if(!paused && visible && !frame && !document.hidden){lastTime=0;frame=requestAnimationFrame(animate)}}
-  function center(){targetX=targetY=gazeX=gazeY=0;start()}
-  function guide(clientX,clientY){
-    if(paused)return;
-    const rect=stage.getBoundingClientRect();
-    const localX=clientX-rect.left-rect.width/2, localY=clientY-rect.top-rect.height/2;
-    gazeX=clamp((localX-x)/20,-10,10);gazeY=clamp((localY-y)/25,-7,7);
-    // Keep the robot inside its own stage. Eyes can follow the pointer across the page.
-    if(clientX>=rect.left && clientX<=rect.right && clientY>=rect.top && clientY<=rect.bottom){
-      const maxX=Math.max(0,(rect.width-robot.offsetWidth)/2-16);
-      const maxY=Math.max(0,(rect.height-robot.offsetHeight)/2-12);
-      targetX=clamp(localX,maxX*-1,maxX);targetY=clamp(localY,maxY*-1,maxY);
-    }
-    start();
-  }
-  document.addEventListener('pointermove',e=>{if(e.pointerType!=='touch')guide(e.clientX,e.clientY)},{passive:true});
-  stage.addEventListener('pointerdown',e=>guide(e.clientX,e.clientY),{passive:true});
-  stage.addEventListener('keydown',e=>{
-    const directions={ArrowLeft:[-30,0],ArrowRight:[30,0],ArrowUp:[0,-25],ArrowDown:[0,25]};
-    if(paused || !directions[e.key])return;
-    e.preventDefault();const [dx,dy]=directions[e.key],rect=stage.getBoundingClientRect();
-    guide(rect.left+rect.width/2+targetX+dx,rect.top+rect.height/2+targetY+dy);
-  });
-  document.documentElement.addEventListener('pointerleave',center);
-  function updateControls(){
-    toggle.textContent=paused?'Enable tracking':'Pause tracking';toggle.setAttribute('aria-pressed',String(!paused));
-    stage.parentElement.classList.toggle('paused',paused);
-    instruction.textContent=paused?'Tracking paused.':coarsePointer.matches?'Tap around the robot to guide it.':'Move your pointer. I’m following.';
-  }
-  toggle.addEventListener('click',()=>{paused=!paused;updateControls();if(paused){cancelAnimationFrame(frame);frame=0}else start()});
-  reducedMotion.addEventListener('change',()=>{paused=reducedMotion.matches;cancelAnimationFrame(frame);frame=0;if(paused){x=y=eyeX=eyeY=targetX=targetY=gazeX=gazeY=0;render()}updateControls();start()});
-  coarsePointer.addEventListener('change',updateControls);
-  new ResizeObserver(()=>{x=y=targetX=targetY=0;render()}).observe(stage);
-  new IntersectionObserver(entries=>{visible=entries[0].isIntersecting;if(!visible){cancelAnimationFrame(frame);frame=0}else start()}).observe(stage);
-  document.addEventListener('visibilitychange',()=>{if(document.hidden){cancelAnimationFrame(frame);frame=0}else start()});
-  document.getElementById('copy-email').addEventListener('click',async()=>{
-    const status=document.getElementById('copy-status');
-    try{await navigator.clipboard.writeText('aj4700@nyu.edu');status.textContent='Copied to clipboard.'}catch{status.textContent='Email: aj4700@nyu.edu'}
-  });
-  updateControls();render();
+ 'use strict';
+ document.getElementById('year').textContent=new Date().getFullYear();
+ document.getElementById('copy-email')?.addEventListener('click',async()=>{const s=document.getElementById('copy-status');try{await navigator.clipboard.writeText('aj4700@nyu.edu');s.textContent='Copied.'}catch{s.textContent='aj4700@nyu.edu'}});
+ const cards=[...document.querySelectorAll('#project-list .project')], search=document.getElementById('project-search');
+ let category='All';
+ function filter(){const query=search.value.trim().toLowerCase();let count=0;cards.forEach(card=>{const show=(category==='All'||card.dataset.category===category)&&card.textContent.toLowerCase().includes(query);card.hidden=!show;if(show)count++});document.getElementById('project-count').textContent=`${count} ${count===1?'project':'projects'}`;document.getElementById('no-results').hidden=count!==0}
+ document.querySelectorAll('[data-filter]').forEach(button=>button.addEventListener('click',()=>{category=button.dataset.filter;document.querySelectorAll('[data-filter]').forEach(b=>b.setAttribute('aria-pressed',String(b===button)));filter()}));search?.addEventListener('input',filter);
+ const cat=document.getElementById('cat'),direction=cat.querySelector('.cat-direction'),followInput=document.getElementById('cat-follow'),showInput=document.getElementById('cat-show'),mode=document.getElementById('cat-mode');
+ const motion=matchMedia('(prefers-reduced-motion: reduce)'),fine=matchMedia('(pointer:fine)');
+ const read=(key,fallback)=>{try{const v=localStorage.getItem(key);return v===null?fallback:v==='true'}catch{return fallback}};
+ const save=(key,value)=>{try{localStorage.setItem(key,String(value))}catch{}};
+ let following=read('portfolio.cat.follow',fine.matches&&!motion.matches),shown=read('portfolio.cat.show',true);
+ let x=30,y=innerHeight-125,tx=x,ty=y,px=0,py=0,hasPointer=false,lastPointer=0,nextIdle=0,holdUntil=0,lastPounce=0,frame=0,lastTime=0;
+ function state(value){if(cat.dataset.state!==value)cat.dataset.state=value}
+ const clamp=(v,lo,hi)=>Math.min(Math.max(v,lo),Math.max(lo,hi));
+ function bound(){const w=cat.offsetWidth||105,h=cat.offsetHeight||88;tx=clamp(tx,5,innerWidth-w-5);ty=clamp(ty,5,innerHeight-h-8);x=clamp(x,5,innerWidth-w-5);y=clamp(y,5,innerHeight-h-8)}
+ function render(){cat.style.transform=`translate3d(${x.toFixed(1)}px,${y.toFixed(1)}px,0)`}
+ function update(){followInput.checked=following;showInput.checked=shown;cat.hidden=!shown;mode.textContent=!shown?'The cat is hidden.':motion.matches?'Reduced motion: the cat is resting.':following?'Move your cursor. The cat will follow.':'The cat will wander, sit, and play.';if(shown&&!motion.matches)start();else{cancelAnimationFrame(frame);frame=0;state('sit')}}
+ function idle(now){if(now<nextIdle)return;nextIdle=now+3000+Math.random()*3500;const choice=Math.random();if(choice<.4){tx=15+Math.random()*Math.max(0,innerWidth-150);ty=40+Math.random()*Math.max(0,innerHeight-180);bound();holdUntil=0}else{state(choice<.6?'sit':choice<.78?'groom':choice<.91?'play':'sleep');holdUntil=nextIdle}}
+ function tick(now){frame=0;if(!shown||motion.matches||document.hidden)return;const dt=Math.min((now-(lastTime||now))/1000,.04);lastTime=now;
+ const chasing=following&&hasPointer&&now-lastPointer<5000;
+ if(chasing){tx=px-80;ty=py+18;bound();if(now>=holdUntil)holdUntil=0}else idle(now);
+ const dx=tx-x,dy=ty-y,distance=Math.hypot(dx,dy);
+ if(now>=holdUntil&&distance>3){const speed=chasing?Math.min(580,90+distance*2):65,step=Math.min(distance,speed*dt);x+=dx/distance*step;y+=dy/distance*step;direction.style.transform=dx<0?'scaleX(-1)':'scaleX(1)';state('walk')}
+ else if(chasing&&now>=holdUntil){if(now-lastPounce>2400&&now-lastPointer<1200){state('pounce');holdUntil=now+600;lastPounce=now}else state('sit')}
+ render();frame=requestAnimationFrame(tick)}
+ function start(){if(!frame&&shown&&!motion.matches&&!document.hidden){lastTime=0;frame=requestAnimationFrame(tick)}}
+ document.addEventListener('pointermove',e=>{if(e.pointerType==='touch')return;px=e.clientX;py=e.clientY;hasPointer=true;lastPointer=performance.now();if(following&&cat.dataset.state!=='pounce')holdUntil=0;start()},{passive:true});
+ document.documentElement.addEventListener('pointerleave',()=>{hasPointer=false;nextIdle=0});
+ followInput.addEventListener('change',()=>{following=followInput.checked;save('portfolio.cat.follow',following);nextIdle=0;holdUntil=0;tx=x;ty=y;update()});
+ showInput.addEventListener('change',()=>{shown=showInput.checked;save('portfolio.cat.show',shown);update()});
+ addEventListener('resize',()=>{bound();render()});document.addEventListener('visibilitychange',()=>{if(document.hidden){cancelAnimationFrame(frame);frame=0}else start()});motion.addEventListener('change',update);
+ bound();render();update();
 })();
